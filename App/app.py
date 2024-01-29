@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from flask import Flask, make_response
+from flask import Flask, make_response,request,jsonify
 from flask_migrate import Migrate
 from flask_restful import Api, Resource, reqparse, abort
 from models import db, Hero, Power, HeroPower
@@ -19,8 +19,8 @@ power_patch_parser.add_argument('description', type=str, required=True)
 
 class HeroesResource(Resource):
     def get(self):
-        heroes = Hero.query.all()
-        return [{'id': hero.id, 'name': hero.name, 'super_name': hero.super_name} for hero in heroes]
+        heroes =  [{'id': hero.id, 'name': hero.name, 'super_name': hero.super_name} for hero in Hero.query.all()]
+        return make_response(jsonify(heroes),200)
 
 
 class HeroResource(Resource):
@@ -28,8 +28,12 @@ class HeroResource(Resource):
         hero = Hero.query.get(hero_id)
         if not hero:
             abort(404, error="Hero not found")
-        powers = [{'id': power.id, 'name': power.name, 'description': power.description} for power in hero.superpowers]
-        return {'id': hero.id, 'name': hero.name, 'super_name': hero.super_name, 'powers': powers}
+        # powers = [{'id': power.id, 'name': power.name, 'description': power.description} for power in hero.superpowers]
+        hero_data= {'id': hero.id, 'name': hero.name, 'super_name': hero.super_name, 'powers': []}
+        for power in hero.superpowers:
+            power_data = {'id': power.id, 'name': power.name, 'description': power.description}
+            hero_data['powers'].append(power_data)
+        return make_response(jsonify(hero_data),200)
 
 
 class PowersResource(Resource):
@@ -94,4 +98,4 @@ api.add_resource(PowerResource, '/powers/<int:power_id>')
 api.add_resource(HeroPowersResource, '/hero_powers')
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(port=5000,debug=True)
